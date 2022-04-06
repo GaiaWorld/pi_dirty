@@ -1,6 +1,6 @@
 [package]
 name = "pi_dirty"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["zmythleo <zmythleo@gmail.com>"]
 edition = "2021"
 description = "Record hierarchy dirty"
@@ -11,3 +11,4 @@ keywords = ["pi", "pi_dirty", "dirty"]
 [dependencies]
 pi_map = "0.1"
 log = "0.4"
+derive_deref = "1.1"

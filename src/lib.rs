@@ -23,6 +23,8 @@
 extern  crate log;
 use std::slice::Iter;
 
+use derive_deref::{Deref, DerefMut};
+
 /// # Examples
 /// ```
 ///    use dirty::LayerDirty;
@@ -197,6 +199,24 @@ impl<T: Eq> LayerDirty<T> {
         }
 		self.end = 0;
     }
+
+	pub fn end (&self) -> usize {
+		self.end
+	}
+
+	pub fn start (&self) -> usize {
+		self.start
+	}
+
+	/// 将某一层脏列表单独劈分出来，和未劈分的脏形成两部分
+	/// 外部依然同时迭代劈分出去的部分，以及设置除劈分层以外的层的脏
+	pub fn split(&mut self, layer: usize) -> (PreDirty<T>, NextDirty<T>) {
+		if layer >= self.dirtys.len() {
+			panic!("LayerDirty split fail, layer:{}, dirty_len:{}", layer, self.dirtys.len())
+		}
+		let vec = unsafe { &mut * (self.dirtys.get_unchecked_mut(layer) as *mut Vec<T>) };
+		(PreDirty {dirtys: self, out_index: layer}, NextDirty {dirtys: vec})
+	}
 }
 
 
@@ -262,5 +282,32 @@ impl<'a, T: Eq> Iterator for ReverseDirtyIterator<'a, T> {
 			Some(r) => Some((r, self.layer)),
 			None => None,
 		}
+    }
+}
+
+#[derive(Deref, DerefMut)]
+pub struct NextDirty<'a, T> {
+	dirtys: &'a mut Vec<T>,
+}
+
+pub struct PreDirty<'a, T> {
+	dirtys: &'a mut LayerDirty<T>,
+	out_index: usize, // 被劈分出去的脏
+}
+impl<'a, T: Eq> PreDirty<'a, T>{
+    pub fn mark(&mut self, id: T, layer: usize) {
+		// 标记的层根劈分出去的层相等，不记录脏
+		if layer == self.out_index {
+			return;
+		}
+        self.dirtys.mark(id, layer);
+    }
+
+    pub fn delete(&mut self, id: T, layer: usize) {
+		// 标记的层根劈分出去的层相等，不删除脏
+		if layer == self.out_index {
+			return;
+		}
+        self.dirtys.delete(id, layer);
     }
 }
