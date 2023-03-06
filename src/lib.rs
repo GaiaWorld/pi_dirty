@@ -186,17 +186,12 @@ impl<T: Eq> LayerDirty<T> {
 
     /// 清空脏标记
     pub fn clear(&mut self) {
-        let len = self.dirtys.len();
-        while self.start < len {
+        while self.start < self.end {
             let vec = unsafe { self.dirtys.get_unchecked_mut(self.start) };
-            let c = vec.len();
             self.start += 1;
-            if c == 0 {
-                continue;
-            }
-            self.count -= c;
             vec.clear();
         }
+		self.count = 0;
 		self.end = 0;
     }
 
